@@ -1,0 +1,21 @@
+{
+  "name": "crap4ts",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "crap4ts": "./dist/bin.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "dependencies": {
+    "oxc-parser": "0.147.0"
+  }
+}

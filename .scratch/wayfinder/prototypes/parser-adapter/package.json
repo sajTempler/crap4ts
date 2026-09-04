@@ -1,0 +1,12 @@
+{
+  "name": "parser-adapter-prototype",
+  "private": true,
+  "type": "module",
+  "description": "PROTOTYPE — throwaway. Not the crap4ts package.",
+  "scripts": {
+    "start": "node run.mjs"
+  },
+  "dependencies": {
+    "oxc-parser": "^0.147.0"
+  }
+}
