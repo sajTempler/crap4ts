@@ -136,17 +136,25 @@ function collectTestExample(
   const metrics = analyzeBody(cb, ctx.sourceText, ctx.subjects, ctx.helpers, new Set())
   const start = offsetToLine(ctx.sourceText, offset(n, "start"))
   const end = offsetToLine(ctx.sourceText, Math.max(offset(n, "start"), offset(n, "end") - 1))
-  const tableDriven = hasTableMethod(chain) || currentSuite(ctx).tableDriven || metrics.tableDriven
+  const isTableTest = hasTableMethod(chain)
+  const tableDriven = isTableTest || currentSuite(ctx).tableDriven || metrics.tableDriven
+  const tableBranches = isTableTest ? Math.max(1, metrics.tableBranches) : metrics.tableBranches
+  let rawLineCount = Math.max(1, end - start + 1)
+  if (isTableTest && cb) {
+    const cbStart = offsetToLine(ctx.sourceText, offset(cb, "start"))
+    const cbEnd = offsetToLine(ctx.sourceText, Math.max(offset(cb, "start"), offset(cb, "end") - 1))
+    rawLineCount = Math.max(1, cbEnd - cbStart + 1)
+  }
   const fixtureBump = fixtureSetupBump(chain, ctx.extendBindings)
   return {
     name: firstNameArg(n),
     describePath: ctx.suites.map((s) => s.title).filter((t) => t.length > 0),
     line: start,
     endLine: end,
-    rawLineCount: Math.max(1, end - start + 1),
+    rawLineCount,
     assertions: metrics.assertions,
     branches: metrics.branches,
-    tableBranches: metrics.tableBranches,
+    tableBranches,
     setupDepth: currentSuite(ctx).setupDepth + fixtureBump + metrics.setupBump,
     mocking: metrics.mocking,
     helperCalls: metrics.helperCalls,

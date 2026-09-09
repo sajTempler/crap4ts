@@ -1,5 +1,5 @@
 import { expect, test } from "vitest"
-import { compareReports, scoreFile, type CollectedExample } from "./score.js"
+import { compareReports, scoreFile, sizeFactor, type CollectedExample } from "./score.js"
 
 function collected(overrides: Partial<CollectedExample> = {}): CollectedExample {
   return {
@@ -163,6 +163,24 @@ test("helper-hidden lines above 8 is helper-hidden-complexity", () => {
   expect(file.examples[0]?.smells).toContain("low-assertion-density")
 })
 
+test("helper-hidden lines <= 8 does not count toward helperHiddenExampleCount", () => {
+  const file = scoreFile({
+    path: "src/helpers.test.ts",
+    examples: [collected({ name: "small-helper", helperHiddenLines: 8, helperCalls: 1 })],
+  })
+  expect(file.examples[0]?.smells).not.toContain("helper-hidden-complexity")
+  expect(file.summary.helperHiddenExampleCount).toBe(0)
+})
+
+test("helper-hidden lines > 8 counts toward helperHiddenExampleCount", () => {
+  const file = scoreFile({
+    path: "src/helpers.test.ts",
+    examples: [collected({ name: "large-helper", helperHiddenLines: 9, helperCalls: 1 })],
+  })
+  expect(file.examples[0]?.smells).toContain("helper-hidden-complexity")
+  expect(file.summary.helperHiddenExampleCount).toBe(1)
+})
+
 test("repeated shallow siblings become AUTO_TABLE_DRIVE toward test.for", () => {
   const siblings = ["a", "b", "c"].map((name) =>
     collected({
@@ -202,10 +220,18 @@ test("twelve examples with a high-scrap outlier stay LOCAL when split pressure i
 test("split pressure via helper-hidden complexity is SPLIT", () => {
   const file = scoreFile({
     path: "src/split.test.ts",
-    examples: [monster(), ...pads(10), collected({ name: "hidden", helperHiddenLines: 1, subjectSymbols: new Set(["hidden"]), assertFeatures: new Set() })],
+    examples: [monster(), ...pads(10), collected({ name: "hidden", helperHiddenLines: 9, subjectSymbols: new Set(["hidden"]), assertFeatures: new Set() })],
   })
   expect(file.summary.remediation).toBe("SPLIT")
   expect(file.summary.actionability).toBe("MANUAL_SPLIT")
+})
+
+test("helper-hidden lines <= 8 does not trigger split pressure", () => {
+  const file = scoreFile({
+    path: "src/split.test.ts",
+    examples: [monster(), ...pads(10), collected({ name: "hidden", helperHiddenLines: 8, subjectSymbols: new Set(["hidden"]), assertFeatures: new Set() })],
+  })
+  expect(file.summary.remediation).toBe("LOCAL")
 })
 
 test("split pressure via average SCRAP is SPLIT", () => {
@@ -294,3 +320,29 @@ test("compareReports is mixed when fileScore moves a little", () => {
   expect(Math.abs(comparison.fileScoreDelta)).toBeLessThan(5)
   expect(comparison.verdict).toBe("mixed")
 })
+
+test("sizeFactor scales gradually across example counts without steep cliffs", () => {
+  expect(sizeFactor(1)).toBe(0.25)
+  expect(sizeFactor(2)).toBe(0.4)
+  expect(sizeFactor(3)).toBe(0.6)
+  expect(sizeFactor(4)).toBe(0.6)
+  expect(sizeFactor(5)).toBe(0.75)
+  expect(sizeFactor(6)).toBe(0.85)
+  expect(sizeFactor(7)).toBe(0.85)
+  expect(sizeFactor(8)).toBe(1)
+  expect(sizeFactor(12)).toBe(1)
+})
+
+test("splitting an example from 4 to 5 examples applies smoothed size factor", () => {
+  const four = scoreFile({
+    path: "src/suite.test.ts",
+    examples: pads(4, { assertions: 2 }),
+  })
+  const five = scoreFile({
+    path: "src/suite.test.ts",
+    examples: pads(5, { assertions: 2 }),
+  })
+  expect(five.summary.fileScore / four.summary.fileScore).toBeCloseTo(0.75 / 0.6, 2)
+})
+
+

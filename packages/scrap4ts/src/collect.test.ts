@@ -1,5 +1,6 @@
 import { expect, test } from "vitest"
 import { collectExamples } from "./collect.js"
+import { scoreFile } from "./score.js"
 
 test("collects it and test with one expect as a single assertion", () => {
   const source = `
@@ -60,7 +61,71 @@ test.for([[1, 2], [2, 3]])("adds", ([a, b]) => {
   const result = collectExamples("src/table.test.ts", source)
   expect(result.examples).toHaveLength(1)
   expect(result.examples[0]?.tableDriven).toBe(true)
+  expect(result.examples[0]?.tableBranches).toBe(1)
   expect(result.examples[0]?.name).toBe("adds")
+})
+
+test("it.each with large inline table uses callback line count and gets case table credit", () => {
+  const source = `
+import { expect, it } from "vitest"
+it.each([
+  [1, 1],
+  [2, 2],
+  [3, 3],
+  [4, 4],
+  [5, 5],
+  [6, 6],
+  [7, 7],
+  [8, 8],
+  [9, 9],
+  [10, 10],
+  [11, 11],
+  [12, 12],
+  [13, 13],
+  [14, 14],
+  [15, 15],
+  [16, 16],
+  [17, 17],
+  [18, 18],
+  [19, 19],
+  [20, 20],
+  [21, 21],
+  [22, 22],
+])("matches %i", (a, b) => {
+  expect(a).toBe(b)
+})
+`
+  const result = collectExamples("src/large-table.test.ts", source)
+  expect(result.examples).toHaveLength(1)
+  expect(result.examples[0]?.tableDriven).toBe(true)
+  expect(result.examples[0]?.tableBranches).toBe(1)
+  expect(result.examples[0]?.rawLineCount).toBe(3)
+  const scored = scoreFile(result)
+  expect(scored.examples[0]?.smells).not.toContain("large-example")
+})
+
+test("it.each and test.for with named const array identifier get case table credit and callback line count", () => {
+  const source = `
+import { expect, it, test } from "vitest"
+const cases = [
+  [1, 2],
+  [3, 4],
+]
+it.each(cases)("it adds", ([a, b]) => {
+  expect(a + 1).toBe(b)
+})
+test.for(cases)("test adds", ([a, b]) => {
+  expect(a + 1).toBe(b)
+})
+`
+  const result = collectExamples("src/identifier-table.test.ts", source)
+  expect(result.examples).toHaveLength(2)
+  expect(result.examples[0]?.tableDriven).toBe(true)
+  expect(result.examples[0]?.tableBranches).toBe(1)
+  expect(result.examples[0]?.rawLineCount).toBe(3)
+  expect(result.examples[1]?.tableDriven).toBe(true)
+  expect(result.examples[1]?.tableBranches).toBe(1)
+  expect(result.examples[1]?.rawLineCount).toBe(3)
 })
 
 test("vi.mock is file-level; vi.spyOn is example-level", () => {

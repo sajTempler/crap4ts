@@ -160,7 +160,9 @@ const PRESSURE = {
   sizeFactors: [
     { upTo: 1, factor: 0.25 },
     { upTo: 2, factor: 0.4 },
-    { upTo: 4, factor: 0.65 },
+    { upTo: 4, factor: 0.6 },
+    { upTo: 5, factor: 0.75 },
+    { upTo: 7, factor: 0.85 },
     { upTo: undefined, factor: 1 },
   ],
   weights: {
@@ -616,7 +618,7 @@ function summarizeExamples(examples: ScoredExample[], moduleMocks: number): Summ
     lowAssertionExamples: examples.filter((e) => e.assertions <= 1).length,
     zeroAssertionExamples: examples.filter((e) => e.assertions === 0).length,
     mockingExamples: examples.filter((e) => e.mocking > 0).length + (moduleMocks > 0 ? 1 : 0),
-    helperHiddenExampleCount: examples.filter((e) => e.helperHiddenLines > 0).length,
+    helperHiddenExampleCount: examples.filter((e) => e.helperHiddenLines > 8).length,
     tableDrivenExamples: examples.filter((e) => e.tableDriven).length,
     coverageMatrixCandidates: coverage,
     caseMatrixRepetition: coverage,
@@ -668,7 +670,7 @@ function stableSummary(summary: SummaryMetrics): boolean {
   return smallStable(summary, n) || generalStable(summary, n)
 }
 
-function sizeFactor(exampleCount: number): number {
+export function sizeFactor(exampleCount: number): number {
   for (const row of PRESSURE.sizeFactors) {
     if (row.upTo === undefined || exampleCount <= row.upTo) return row.factor
   }
