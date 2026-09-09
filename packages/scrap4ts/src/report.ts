@@ -102,9 +102,11 @@ function howSection(actions: Action[]): string {
 
 function renderGuidance(file: FileReport): string {
   const s = file.summary
+  const refactorPressure =
+    s.fileLevel === "STABLE" ? "STABLE" : `${s.fileLevel} (${fmt1(s.fileScore)})`
   return [
     file.path,
-    `  refactor-pressure: ${s.fileLevel} (${fmt1(s.fileScore)})`,
+    `  refactor-pressure: ${refactorPressure}`,
     `  remediation-mode: ${s.remediation}`,
     `  ai-actionability: ${s.actionability}`,
     `  ai-guidance: ${s.actionabilityMessage}`,

@@ -74,3 +74,37 @@ test("recommended extractions print a one-liner as line N and a span as lines N-
   expect(report).toContain("line 5")
   expect(report).toContain("lines 2-4")
 })
+
+test("STABLE file does not print confusing non-stable pressure score in refactor-pressure", () => {
+  const examples = Array.from({ length: 10 }, (_, i) =>
+    collected({
+      name: `test${i}`,
+      assertions: i < 3 ? 1 : 2,
+      rawLineCount: 15,
+      branches: 1,
+      subjectSymbols: new Set([`sym${i}`]),
+      assertFeatures: new Set([`feat${i}`]),
+    }),
+  )
+  const file = scoreFile({ path: "src/stable-medium.test.ts", examples })
+  expect(file.summary.fileLevel).toBe("STABLE")
+  expect(file.summary.fileScore).toBeGreaterThanOrEqual(18)
+
+  const report = formatReport([file], { verbose: false })
+  expect(report).toContain("refactor-pressure: STABLE")
+  expect(report).not.toMatch(/refactor-pressure: STABLE \(/)
+})
+
+test("non-STABLE file prints level and score in refactor-pressure", () => {
+  // File with zero-assertion example so it cannot be STABLE
+  const file = scoreFile({
+    path: "src/empty.test.ts",
+    examples: [collected({ name: "todo", assertions: 0, assertFeatures: new Set() })],
+  })
+  expect(file.summary.fileLevel).not.toBe("STABLE")
+
+  const report = formatReport([file], { verbose: false })
+  expect(report).toMatch(/refactor-pressure: (LOW|MEDIUM|HIGH|CRITICAL) \(\d+\.\d+\)/)
+})
+
+

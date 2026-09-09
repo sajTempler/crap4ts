@@ -89,7 +89,7 @@ function memberChain(node: object): string[] {
   return [...(object ? calleeChain(object) : []), ...(propName ? [propName] : [])]
 }
 
-function unwrapNested(node: object, key: "callee" | "expression"): string[] {
+function unwrapNested(node: object, key: "callee" | "expression" | "tag"): string[] {
   const inner = child(node, key)
   return inner ? calleeChain(inner) : []
 }
@@ -100,6 +100,7 @@ export function calleeChain(node: object): string[] {
   if (isMemberExpr(t)) return memberChain(node)
   if (t === "CallExpression") return unwrapNested(node, "callee")
   if (t === "ChainExpression") return unwrapNested(node, "expression")
+  if (t === "TaggedTemplateExpression") return unwrapNested(node, "tag")
   return []
 }
 
