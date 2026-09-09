@@ -134,6 +134,28 @@ it("uses helper", () => {
   expect(result.examples[0]?.helperHiddenLines).toBeGreaterThan(0)
 })
 
+test("same-file helpers with chained method calls charge helper only once", () => {
+  const source = `
+import { expect, it } from "vitest"
+function createQueryClient() {
+  return {
+    fetchQuery: () => ({
+      then: (fn: any) => fn("data"),
+    }),
+  }
+}
+it("uses chained helper", () => {
+  createQueryClient().fetchQuery().then((d: any) => d)
+  expect(1).toBe(1)
+})
+`
+  const result = collectExamples("src/chained-helper.test.ts", source)
+  expect(result.examples[0]?.helperCalls).toBe(1)
+  expect(result.examples[0]?.helperHiddenLines).toBe(7)
+})
+
+
+
 test("body for-of, forEach, and map over row tuples count as a large case table", () => {
   const source = `
 import { expect, it } from "vitest"

@@ -458,6 +458,7 @@ function absorbHelper(w: WalkCtx, calleeName: string): void {
 }
 
 function chargeHelper(w: WalkCtx, chain: string[]): void {
+  if (chain.length !== 1) return
   const calleeName = chain[0]
   if (!calleeName || !w.helpers.has(calleeName) || w.helperStack.has(calleeName)) return
   absorbHelper(w, calleeName)
